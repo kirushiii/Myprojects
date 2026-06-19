@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Stack Based Mobile Call Log System</title>
+<style>
+body{
+font-family:Arial,sans-serif;
+background:#111;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+.mobile{
+width:360px;
+background:#222;
+padding:20px;
+border-radius:20px;
+text-align:center;
+color:white;
+box-shadow:0 0 15px rgba(255,255,255,0.2);
+}
+h2{
+margin-top:0;
+}
+#number{
+width:90%;
+height:45px;
+font-size:24px;
+text-align:center;
+border:none;
+border-radius:10px;
+margin-bottom:15px;
+outline:none;
+}
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+}
+.num{
+height:55px;
+font-size:22px;
+border:none;
+border-radius:12px;
+background:#444;
+color:white;
+cursor:pointer;
+}
+.call{
+background:green;
+color:white;
+padding:12px;
+border:none;
+border-radius:10px;
+margin:5px;
+cursor:pointer;
+font-size:16px;
+}
+.clear{
+background:red;
+color:white;
+padding:12px;
+border:none;
+border-radius:10px;
+margin:5px;
+cursor:pointer;
+font-size:16px;
+}
+.history{
+background:blue;
+color:white;
+padding:12px;
+border:none;
+border-radius:10px;
+margin:5px;
+cursor:pointer;
+font-size:16px;
+}
+#status{
+margin-top:10px;
+font-size:16px;
+font-weight:bold;
+min-height:30px;
+}
+#logs{
+margin-top:15px;
+height:220px;
+overflow-y:auto;
+background:#333;
+padding:10px;
+border-radius:10px;
+text-align:left;
+}
+.log{
+background:#444;
+padding:8px;
+margin-bottom:8px;
+border-radius:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="mobile">
+
+<h2>📱 Mobile Dialler</h2>
+
+<input type="text" id="number" readonly>
+
+<div class="grid">
+<button class="num" onclick="addNum('1')">1</button>
+<button class="num" onclick="addNum('2')">2</button>
+<button class="num" onclick="addNum('3')">3</button>
+
+<button class="num" onclick="addNum('4')">4</button>
+<button class="num" onclick="addNum('5')">5</button>
+<button class="num" onclick="addNum('6')">6</button>
+
+<button class="num" onclick="addNum('7')">7</button>
+<button class="num" onclick="addNum('8')">8</button>
+<button class="num" onclick="addNum('9')">9</button>
+
+<button class="num">*</button>
+<button class="num" onclick="addNum('0')">0</button>
+<button class="num">#</button>
+</div>
+
+<br>
+
+<button class="call" onclick="makeCall()">📞 Call</button>
+<button class="clear" onclick="clearNum()">❌ Clear</button>
+<button class="history" onclick="viewHistory()">📜 History</button>
+
+<div id="status"></div>
+
+<h3>📞 Call Logs (STACK)</h3>
+<div id="logs"></div>
+
+</div>
+
+<script>
+
+let callStack =
+JSON.parse(localStorage.getItem("callLogs")) || [];
+
+function addNum(num){
+
+let input =
+document.getElementById("number");
+
+if(input.value.length >= 12){
+
+document.getElementById("status")
+.innerHTML =
+"❌ Maximum Limit Reached";
+
+return;
+}
+
+input.value += num;
+}
+
+function clearNum(){
+
+document.getElementById("number")
+.value="";
+
+document.getElementById("status")
+.innerHTML="";
+}
+
+function saveLogs(){
+
+localStorage.setItem(
+"callLogs",
+JSON.stringify(callStack)
+);
+
+showLogs();
+}function makeCall(){
+
+let num =
+document.getElementById("number")
+.value;
+
+let status =
+document.getElementById("status");
+
+let time =
+new Date().toLocaleString();
+
+let location =
+"Chennai";
+
+let duration =
+(Math.floor(Math.random()*10)+1)
++ " min";
+
+let tower =
+Math.random() > 0.2;
+
+let phoneOn =
+Math.random() > 0.1;
+
+// Empty number
+if(num==""){
+
+status.innerHTML =
+"❌ Enter Number";
+
+return;
+}
+
+// Emergency only connect
+if(
+num=="100" ||
+num=="108" ||
+num=="112"
+){
+
+status.innerHTML =
+"🚨 Emergency Call Connected";
+
+callStack.push({
+type:"Emergency Call",
+number:num,
+time:time,
+duration:"Instant",
+location:location
+});
+
+saveLogs();
+clearNum();
+return;
+}
+
+// Less than 10
+if(num.length < 10){
+
+status.innerHTML =
+"❌ Invalid Number";
+
+clearNum();
+return;
+}
+
+// More than 10
+if(num.length > 10){
+
+status.innerHTML =
+"❌ Invalid Number";
+
+clearNum();
+return;
+}
+
+// Phone switched off
+if(!phoneOn){
+
+status.innerHTML =
+"📵 Phone Switched Off";
+
+callStack.push({
+type:"Missed Call",
+number:num,
+time:time,
+duration:"0 min",
+location:location
+});
+
+saveLogs();
+clearNum();
+return;
+}
+
+// No tower
+if(!tower){
+
+status.innerHTML =
+"📡 No Network / Tower";
+
+callStack.push({
+type:"Missed Call",
+number:num,
+time:time,
+duration:"0 min",
+location:location
+});
+
+saveLogs();
+clearNum();
+return;
+}
+
+// Call connected
+status.innerHTML =
+"📞 Call Connected To " + num;
+
+callStack.push({
+type:"Outgoing Call",
+number:num,
+time:time,
+duration:duration,
+location:location
+});
+
+saveLogs();
+clearNum();
+}
+
+// Stack logs
+function showLogs(){
+
+let logs =
+document.getElementById("logs");
+
+logs.innerHTML="";
+
+for(
+let i=callStack.length-1;
+i>=0;
+i--
+){
+
+logs.innerHTML +=
+`
+<div class="log">
+
+<b>${callStack[i].type}</b><br>
+
+📱 ${callStack[i].number}<br>
+
+🕒 ${callStack[i].time}<br>
+
+⏱ ${callStack[i].duration}<br>
+
+📍 ${callStack[i].location}
+
+</div>
+`;
+}
+}
+
+// Same number history
+function viewHistory(){
+
+let num =
+document.getElementById("number")
+.value;
+
+if(num==""){
+
+document.getElementById("status")
+.innerHTML =
+"❌ Enter Number";
+
+return;
+}
+
+let history =
+callStack.filter(call =>
+call.number == num
+);
+
+let logs =
+document.getElementById("logs");
+
+if(history.length==0){
+
+logs.innerHTML =
+"❌ No Call History Found";
+
+return;
+}
+
+logs.innerHTML =
+"<h4>📜 History For "
++ num +
+"</h4>";
+
+for(
+let i=history.length-1;
+i>=0;
+i--
+){
+
+logs.innerHTML +=
+`
+<div class="log">
+
+<b>${history[i].type}</b><br>
+
+🕒 ${history[i].time}<br>
+
+⏱ ${history[i].duration}<br>
+
+📍 ${history[i].location}
+
+</div>
+`;
+}
+}
+
+showLogs();
+
+</script>
+
+</body>
+</html>
